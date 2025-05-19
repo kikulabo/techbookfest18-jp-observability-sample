@@ -1,5 +1,6 @@
 require('./tracer');
 
+const opentelemetry = require('@opentelemetry/api');
 const express = require('express');
 const app = express();
 const hostname = '127.0.0.1';
@@ -15,6 +16,11 @@ app.get('/testerror', (_req, res) => {
   try {
     throw new Error('This is a test error for Mackerel log monitoring!');
   } catch (error) {
+    const span = opentelemetry.trace.getActiveSpan();
+    if (span) {
+      span.recordException(error);
+      span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR, message: error.message });
+    }
     console.error(`Error on /testerror path: ${error.message}`);
     res.status(500).send('An intentional error occurred on the server.');
   }
@@ -22,10 +28,39 @@ app.get('/testerror', (_req, res) => {
 
 // 重い処理をシミュレートするパス
 app.get('/heavy-request', async (_req, res) => {
-  console.log('Request to /heavy-request');
-  const delaySeconds = 3;
-  await new Promise(resolve => setTimeout(resolve, delaySeconds * 1000));
-  res.send(`Heavy request processed after ${delaySeconds} seconds.\n`);
+  const tracer = opentelemetry.trace.getTracer('heavy-request-tracer');
+  const parentSpan = opentelemetry.trace.getActiveSpan();
+
+  try {
+    // heavy-processingスパン（5秒）
+    await new Promise(resolve => {
+      tracer.startActiveSpan('heavy-processing', { parent: parentSpan }, (heavySpan) => {
+        setTimeout(() => {
+          heavySpan.end();
+          resolve();
+        }, 5000);
+      });
+    });
+
+    // light-processingスパン（1秒）
+    await new Promise(resolve => {
+      tracer.startActiveSpan('light-processing', { parent: parentSpan }, (lightSpan) => {
+        setTimeout(() => {
+          lightSpan.end();
+          resolve();
+        }, 1000);
+      });
+    });
+
+    res.send('Heavy request processed. Check the trace to see the bottleneck!\n');
+  } catch (error) {
+    const span = opentelemetry.trace.getActiveSpan();
+    if (span) {
+      span.recordException(error);
+      span.setStatus({ code: opentelemetry.SpanStatusCode.ERROR, message: error.message });
+    }
+    res.status(500).send('An error occurred during processing.');
+  }
 });
 
 app.listen(port, hostname, () => {

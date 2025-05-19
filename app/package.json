@@ -9,7 +9,7 @@
         "@opentelemetry/resources": "^2.0.1",
         "@opentelemetry/sdk-node": "^0.201.0",
         "@opentelemetry/semantic-conventions": "^1.33.0",
-        "express": "^5.1.0",
-        "dotenv": "^16.5.0"
+        "dotenv": "^16.5.0",
+        "express": "^5.1.0"
     }
 }
