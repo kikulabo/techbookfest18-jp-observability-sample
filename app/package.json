@@ -1,0 +1,15 @@
+{
+    "name": "app",
+    "version": "1.0.0",
+    "main": "index.js",
+    "dependencies": {
+        "@opentelemetry/api": "^1.9.0",
+        "@opentelemetry/auto-instrumentations-node": "^0.59.0",
+        "@opentelemetry/exporter-trace-otlp-proto": "^0.201.0",
+        "@opentelemetry/resources": "^2.0.1",
+        "@opentelemetry/sdk-node": "^0.201.0",
+        "@opentelemetry/semantic-conventions": "^1.33.0",
+        "express": "^5.1.0",
+        "dotenv": "^16.5.0"
+    }
+}
